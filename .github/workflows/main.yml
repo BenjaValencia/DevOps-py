@@ -55,13 +55,21 @@ jobs:
           aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION_NAME }} --query taskDefinition > task-definition.json
 
       # 5. Modificar el JSON del Task Definition reemplazando la imagen vieja por la nueva URI recién compilada
-      - name: Actualizar ID de Imagen en el Task Definition de ECS
+      - name: Fill in the new image ID in the Amazon ECS task definition
         id: render-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: task-definition.json
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ steps.build-image.outputs.image }}
+          # 🌟 ASEGURAMOS LAS VARIABLES DIRECTAMENTE CON LOS SECRETOS DE GITHUB 🌟
+          environment-variables: |
+            PORT=8081
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=3306
+            DB_USER=root
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=users_db
 
       # 6. Desplegar el nuevo Task Definition en ECS (Inicia el Rolling Update de AWS)
       - name: Desplegar en Amazon ECS
