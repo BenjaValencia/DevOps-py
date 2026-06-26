@@ -5,42 +5,41 @@ from mysql.connector import Error
 from dotenv import load_dotenv
 import os
 import decimal
+import pymysql  # Mantener para la creación inicial
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-# Database configuration
+# Database configuration - 🌟 AQUÍ SE INYECTA LA BASE DE DATOS POR DEFECTO 🌟
 db_config = {
     'host': os.getenv('DB_HOST', 'localhost'),
     'port': int(os.getenv('DB_PORT', 3306)),
     'user': os.getenv('DB_USER', 'root'),
     'password': os.getenv('DB_PASSWORD', ''),
+    'database': 'products_db'  # <-- Agregado para solucionar el error "No database selected"
 }
 
-import pymysql
-
-# Configuración usando el endpoint y tu clave secreta de la RDS
-db_host = os.getenv('DB_HOST') # O tu string largo directo
-db_password = os.getenv('DB_PASSWORD') # Tu contraseña maestra
+# Bloque de inicialización automática de la base de datos
+db_host = os.getenv('DB_HOST')
+db_password = os.getenv('DB_PASSWORD')
 
 try:
-    # 1. Conectamos directo al motor sin especificar base de datos
+    # Conectamos directo al motor como 'root' sin especificar base de datos para poder crearla
     conn = pymysql.connect(
         host=db_host,
-        user='root', # <--- Forzamos 'root' como dice tu captura de AWS
+        user='root',
         password=db_password,
         port=3306
     )
     cursor = conn.cursor()
-    # 2. Creamos la base de datos que tu endpoint necesita
     cursor.execute("CREATE DATABASE IF NOT EXISTS products_db;")
     cursor.close()
     conn.close()
     print("Base de datos products_db verificada/creada con éxito.")
 except Exception as e:
-    print(f"Error al inicializar la base de datos: {e}")
+    print(f"Error al inicializar la base de datos con pymysql: {e}")
 
 def get_db_connection():
     try:
@@ -55,7 +54,8 @@ def init_db():
     if connection:
         cursor = connection.cursor()
         
-        # 🌟 AGREGA ESTA LÍNEA AQUÍ PARA SELECCIONAR LA BASE DE DATOS 🌟
+        # Ya no es estrictamente necesario el USE, porque db_config ya entra directo a la BD, 
+        # pero lo dejamos como doble seguro.
         cursor.execute("USE products_db;")
         
         cursor.execute("""
@@ -109,7 +109,6 @@ def get_all_products():
     cursor.close()
     connection.close()
     
-    # Convert Decimal to float for JSON serialization
     for product in products:
         if 'price' in product and isinstance(product['price'], decimal.Decimal):
             product['price'] = float(product['price'])
