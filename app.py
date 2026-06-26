@@ -54,6 +54,10 @@ def init_db():
     connection = get_db_connection()
     if connection:
         cursor = connection.cursor()
+        
+        # 🌟 AGREGA ESTA LÍNEA AQUÍ PARA SELECCIONAR LA BASE DE DATOS 🌟
+        cursor.execute("USE products_db;")
+        
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS products (
                 id INT AUTO_INCREMENT PRIMARY KEY,
