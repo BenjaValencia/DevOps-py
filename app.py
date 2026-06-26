@@ -19,17 +19,28 @@ db_config = {
     'password': os.getenv('DB_PASSWORD', ''),
 }
 
-import pymysql # O la librería que estés usando (mysql.connector)
+import pymysql
 
-# Código para inyectar al iniciar la app:
-conn = pymysql.connect(**db_config)
-cursor = conn.cursor()
-cursor.execute("CREATE DATABASE IF NOT EXISTS products_db;")
-cursor.execute("USE products_db;")
-# Aquí puedes pegar los cursor.execute("CREATE TABLE ...") de tus tablas si te faltan
-conn.commit()
-cursor.close()
-conn.close()
+# Configuración usando el endpoint y tu clave secreta de la RDS
+db_host = os.getenv('DB_HOST') # O tu string largo directo
+db_password = os.getenv('DB_PASSWORD') # Tu contraseña maestra
+
+try:
+    # 1. Conectamos directo al motor sin especificar base de datos
+    conn = pymysql.connect(
+        host=db_host,
+        user='root', # <--- Forzamos 'root' como dice tu captura de AWS
+        password=db_password,
+        port=3306
+    )
+    cursor = conn.cursor()
+    # 2. Creamos la base de datos que tu endpoint necesita
+    cursor.execute("CREATE DATABASE IF NOT EXISTS products_db;")
+    cursor.close()
+    conn.close()
+    print("Base de datos products_db verificada/creada con éxito.")
+except Exception as e:
+    print(f"Error al inicializar la base de datos: {e}")
 
 def get_db_connection():
     try:
