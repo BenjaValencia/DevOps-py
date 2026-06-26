@@ -17,8 +17,19 @@ db_config = {
     'port': int(os.getenv('DB_PORT', 3306)),
     'user': os.getenv('DB_USER', 'root'),
     'password': os.getenv('DB_PASSWORD', ''),
-    'database': os.getenv('DB_NAME', 'products_db')
 }
+
+import pymysql # O la librería que estés usando (mysql.connector)
+
+# Código para inyectar al iniciar la app:
+conn = pymysql.connect(**db_config)
+cursor = conn.cursor()
+cursor.execute("CREATE DATABASE IF NOT EXISTS products_db;")
+cursor.execute("USE products_db;")
+# Aquí puedes pegar los cursor.execute("CREATE TABLE ...") de tus tablas si te faltan
+conn.commit()
+cursor.close()
+conn.close()
 
 def get_db_connection():
     try:
